@@ -8,11 +8,12 @@
 import SwiftUI
 import CoreLocation
 import AlertKit
+import Combine
 
 struct LocSimView: View {
     @StateObject private var appSettings = AppSettings()
+    @StateObject private var locationModel = LocationModel()
     
-    @State private var locationManager = CLLocationManager()
     @State private var lat: Double = 0.0
     @State private var long: Double = 0.0
     @State private var tappedCoordinate: EquatableCoordinate? = nil
@@ -20,28 +21,45 @@ struct LocSimView: View {
     @State private var appliedCust: Bool = false
     @State private var latTemp = ""
     @State private var longTemp = ""
+    
+    // Add a local cancellables set
+    @State private var cancellables = Set<AnyCancellable>()
+    
     var body: some View {
-            if #available(iOS 16.0, *) {
-                NavigationStack {
-                    LocSimMainView()
-                }
-            } else {
-                NavigationView {
-                    LocSimMainView()
-                }
+        if #available(iOS 16.0, *) {
+            NavigationStack {
+                LocSimMainView()
+            }
+        } else {
+            NavigationView {
+                LocSimMainView()
             }
         }
+    }
+
     @ViewBuilder
-        private func LocSimMainView() -> some View {
-            VStack {
-                CustomMapView(tappedCoordinate: $tappedCoordinate)
-                    .onAppear {
-                        CLLocationManager().requestAlwaysAuthorization()
-                    }
-            }
-            .ignoresSafeArea(.keyboard)
+    private func LocSimMainView() -> some View {
+        VStack {
+            CustomMapView(tappedCoordinate: $tappedCoordinate, initialLocation: CLLocationCoordinate2D(latitude: lat, longitude: long))
+                .onAppear {
+                    locationModel.requestAuthorisation(always: false)
+                }
+        }
+        .ignoresSafeArea(.keyboard)
         .onAppear {
-            LocationModel().requestAuthorisation()
+            // Observe location updates
+            locationModel.$authorisationStatus
+                .sink { status in
+                    if status == .authorizedAlways || status == .authorizedWhenInUse {
+                        if let location = locationModel.locationManager.location {
+                            lat = location.coordinate.latitude
+                            long = location.coordinate.longitude
+                            // Trigger a view update
+                            tappedCoordinate = EquatableCoordinate(coordinate: CLLocationCoordinate2D(latitude: lat, longitude: long))
+                        }
+                    }
+                }
+                .store(in: &cancellables) // Use the local cancellables set
         }
         .onChange(of: tappedCoordinate) { newValue in
             if let coordinate = newValue {
@@ -56,7 +74,7 @@ struct LocSimView: View {
                 )
             }
         }
-        .toolbar{
+        .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Text("LocSim")
                     .font(.title2)
@@ -82,8 +100,7 @@ struct LocSimView: View {
                                 countdown -= 1
                             }
                         }
-                    }
-                    else {
+                    } else {
                         LocSimManager.stopLocSim()
                     }
                     AlertKitAPI.present(
@@ -121,12 +138,13 @@ struct LocSimView: View {
             BookMarkSlider(lat: $lat, long: $long)
         }
     }
+
     func submit() {
         if !latTemp.isEmpty, !longTemp.isEmpty {
             LocSimManager.startLocSim(location: .init(latitude: Double(latTemp) ?? 0.0, longitude: Double(longTemp) ?? 0.0))
-        }
-        else {
+        } else {
             UIApplication.shared.alert(body: "Those are empty coordinates mate !")
         }
     }
 }
+

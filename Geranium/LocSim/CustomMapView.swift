@@ -10,6 +10,7 @@ import MapKit
 
 struct CustomMapView: UIViewRepresentable {
     @Binding var tappedCoordinate: EquatableCoordinate?
+    var initialLocation: CLLocationCoordinate2D
 
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
@@ -18,14 +19,13 @@ struct CustomMapView: UIViewRepresentable {
         mapView.layer.cornerRadius = 15
         mapView.layer.masksToBounds = true
 
-        // Set the initial region around the user's location with a 3km span
-        if let userLocation = mapView.userLocation.location {
-            let region = MKCoordinateRegion(center: userLocation.coordinate, latitudinalMeters: 3000, longitudinalMeters: 3000)
-            mapView.setRegion(region, animated: true)
-        }
-
         let tapRecognizer = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         mapView.addGestureRecognizer(tapRecognizer)
+        
+        // Set the initial region with a 2-mile span
+        let region = MKCoordinateRegion(center: initialLocation, latitudinalMeters: 3218.69, longitudinalMeters: 3218.69)
+        mapView.setRegion(region, animated: true)
+
         return mapView
     }
 

@@ -22,6 +22,7 @@ struct CustomMapView: UIViewRepresentable {
 
         let tapRecognizer = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         mapView.addGestureRecognizer(tapRecognizer)
+
         return mapView
     }
 

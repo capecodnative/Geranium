@@ -11,45 +11,47 @@ import AlertKit
 
 struct LocSimView: View {
     @StateObject private var appSettings = AppSettings()
+    @StateObject private var locationModel = LocationModel()
     
-    @State private var locationManager = CLLocationManager()
     @State private var lat: Double = 0.0
     @State private var long: Double = 0.0
     @State private var altitude: String = "0.0"
     @State private var tappedCoordinate: EquatableCoordinate? = nil
     @State private var mapCenterRequest: MapCenterRequest? = nil
     @State private var bookmarkSheetTggle: Bool = false
+
     var body: some View {
-            if #available(iOS 16.0, *) {
-                NavigationStack {
-                    LocSimMainView()
-                }
-            } else {
-                NavigationView {
-                    LocSimMainView()
-                }
+        if #available(iOS 16.0, *) {
+            NavigationStack {
+                LocSimMainView()
+            }
+        } else {
+            NavigationView {
+                LocSimMainView()
             }
         }
+    }
+
     @ViewBuilder
-        private func LocSimMainView() -> some View {
-            VStack {
-                CustomMapView(
-                    tappedCoordinate: $tappedCoordinate,
-                    defaultRadiusMeters: appSettings.locSimDefaultRadiusMeters,
-                    centerRequest: mapCenterRequest
-                )
-                    .onAppear {
-                        locationManager.requestWhenInUseAuthorization()
-                    }
-            }
-            .ignoresSafeArea(.keyboard)
+    private func LocSimMainView() -> some View {
+        VStack {
+            CustomMapView(
+                tappedCoordinate: $tappedCoordinate,
+                defaultRadiusMeters: appSettings.locSimDefaultRadiusMeters,
+                centerRequest: mapCenterRequest
+            )
+                .onAppear {
+                    locationModel.requestAuthorisation(always: false)
+                }
+        }
+        .ignoresSafeArea(.keyboard)
         .onChange(of: tappedCoordinate) { newValue in
             if let coordinate = newValue {
                 let altitudeValue = Double(altitude) ?? 0.0
                 startSimulation(at: coordinate.coordinate, altitude: altitudeValue)
             }
         }
-        .toolbar{
+        .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Text("LocSim")
                     .font(.title2)
@@ -113,8 +115,7 @@ struct LocSimView: View {
                                 countdown -= 1
                             }
                         }
-                    }
-                    else {
+                    } else {
                         LocSimManager.stopLocSim()
                     }
                     AlertKitAPI.present(
@@ -153,7 +154,7 @@ struct LocSimView: View {
             }
         }
     }
-    
+
     private func startSimulation(at gcjCoordinate: CLLocationCoordinate2D, altitude: Double) {
         let wgsCoordinate = CoordTransform.gcj02ToWgs84(gcjCoordinate)
         

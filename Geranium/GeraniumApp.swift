@@ -61,6 +61,9 @@ class AppSettings: ObservableObject {
     @AppStorage("keepCheckBoxesC") var keepCheckBoxesC: Bool = true
     @AppStorage("LocSimAttempts") var locSimAttemptNB: Int = 1
     @AppStorage("locSimMultipleAttempts") var locSimMultipleAttempts: Bool = false
+    @AppStorage("locSimDefaultRadiusMeters") var locSimDefaultRadiusMeters: Double = 5000.0
+    @AppStorage("locSimRadiusUnit") var locSimRadiusUnit: String = Locale.current.usesMetricSystem ? "km" : "mi"
+    @AppStorage("locSimCenterOnBookmark") var locSimCenterOnBookmark: Bool = true
     @AppStorage("usrUUID") var usrUUID: String = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
     @AppStorage("languageCode") var languageCode: String = ""
     @AppStorage("defaultTab") var defaultTab: Int = 1 

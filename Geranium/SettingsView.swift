@@ -172,6 +172,28 @@ struct SettingsView: View {
                     }
                 }
                 Section(header: Label("LocSim Settings", systemImage: "location.fill.viewfinder"), footer: Text("Various settings for LocSim. Sometimes, users can encounter issues with stopping LocSim. Those settings will allow you to attempt to stop LocSim multiple time.")) {
+                    HStack {
+                        Text("Default Map Radius")
+                        Spacer()
+                        TextField("5", value: locSimRadiusBinding, formatter: locSimRadiusFormatter)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: 90)
+                            .id(appSettings.locSimRadiusUnit)
+                        Text(appSettings.locSimRadiusUnit == "mi" ? "mi" : "km")
+                            .foregroundColor(.secondary)
+                    }
+
+                    Picker("Distance Unit", selection: $appSettings.locSimRadiusUnit) {
+                        Text("Kilometers").tag("km")
+                        Text("Miles").tag("mi")
+                    }
+                    .pickerStyle(.segmented)
+
+                    Toggle(isOn: $appSettings.locSimCenterOnBookmark) {
+                        Text("Center map on selected bookmark")
+                    }
+
                     Toggle(isOn: $appSettings.locSimMultipleAttempts) {
                         Text("Try stopping LocSim multiple times")
                     }
@@ -368,5 +390,29 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
         }
+    }
+
+    private var metersPerSelectedUnit: Double {
+        appSettings.locSimRadiusUnit == "mi" ? 1609.344 : 1000.0
+    }
+
+    private var locSimRadiusBinding: Binding<Double> {
+        Binding(
+            get: {
+                appSettings.locSimDefaultRadiusMeters / metersPerSelectedUnit
+            },
+            set: { radius in
+                guard radius.isFinite, radius > 0 else { return }
+                appSettings.locSimDefaultRadiusMeters = max(100.0, min(radius * metersPerSelectedUnit, 1_000_000.0))
+            }
+        )
+    }
+
+    private var locSimRadiusFormatter: NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        return formatter
     }
 }

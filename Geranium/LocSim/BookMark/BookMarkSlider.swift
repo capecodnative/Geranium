@@ -19,6 +19,7 @@ struct BookMarkSlider: View {
     @Environment(\.dismiss) var dismiss
     @Binding var lat: Double
     @Binding var long: Double
+    let onBookmarkSelected: (Bookmark) -> Void
     @State private var name = ""
     @State private var result: Bool = false
     @AppStorage("isMika") var isMika: Bool = false
@@ -31,6 +32,9 @@ struct BookMarkSlider: View {
             List {
                 ForEach(bookmarks) { bookmark in
                     Button(action: {
+                        lat = bookmark.lat
+                        long = bookmark.long
+                        onBookmarkSelected(bookmark)
                         close()
                         LocSimManager.startLocSim(location: .init(latitude: bookmark.lat, longitude: bookmark.long))
                         AlertKitAPI.present(

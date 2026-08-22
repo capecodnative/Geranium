@@ -17,6 +17,7 @@ struct LocSimView: View {
     @State private var long: Double = 0.0
     @State private var altitude: String = "0.0"
     @State private var tappedCoordinate: EquatableCoordinate? = nil
+    @State private var mapCenterRequest: MapCenterRequest? = nil
     @State private var bookmarkSheetTggle: Bool = false
     var body: some View {
             if #available(iOS 16.0, *) {
@@ -32,15 +33,16 @@ struct LocSimView: View {
     @ViewBuilder
         private func LocSimMainView() -> some View {
             VStack {
-                CustomMapView(tappedCoordinate: $tappedCoordinate)
+                CustomMapView(
+                    tappedCoordinate: $tappedCoordinate,
+                    defaultRadiusMeters: appSettings.locSimDefaultRadiusMeters,
+                    centerRequest: mapCenterRequest
+                )
                     .onAppear {
-                        CLLocationManager().requestAlwaysAuthorization()
+                        locationManager.requestWhenInUseAuthorization()
                     }
             }
             .ignoresSafeArea(.keyboard)
-        .onAppear {
-            LocationModel().requestAuthorisation()
-        }
         .onChange(of: tappedCoordinate) { newValue in
             if let coordinate = newValue {
                 let altitudeValue = Double(altitude) ?? 0.0
@@ -140,7 +142,15 @@ struct LocSimView: View {
             }
         }
         .sheet(isPresented: $bookmarkSheetTggle) {
-            BookMarkSlider(lat: $lat, long: $long)
+            BookMarkSlider(lat: $lat, long: $long) { bookmark in
+                guard appSettings.locSimCenterOnBookmark else { return }
+                mapCenterRequest = MapCenterRequest(
+                    coordinate: CLLocationCoordinate2D(
+                        latitude: bookmark.lat,
+                        longitude: bookmark.long
+                    )
+                )
+            }
         }
     }
     
